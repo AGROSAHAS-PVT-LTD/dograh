@@ -12,6 +12,14 @@ prd/
 .vercel
 
 .devcontainer/install.local.sh
+
+# Digifrica / local VPS one-off deploy helpers (org-specific, not for upstream)
+scripts/bootstrap_joel_vps.sh
+scripts/deploy_digifrica.sh
+scripts/finish_dograh_public.sh
+scripts/install_dograh_nginx_vps.sh
+scripts/push_bootstrap_to_vps.sh
+
 venv/
 .venv/
 .playwright-mcp
