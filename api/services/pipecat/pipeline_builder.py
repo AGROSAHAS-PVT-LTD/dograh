@@ -4,7 +4,11 @@ from loguru import logger
 
 from api.services.pipecat.audio_config import AudioConfig
 from pipecat.pipeline.pipeline import Pipeline
-from pipecat.pipeline.worker import PipelineParams, PipelineWorker
+from pipecat.pipeline.worker import (
+    PipelineParams,
+    PipelineWorker,
+    ProcessorUnusablePolicy,
+)
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
 from pipecat.utils.run_context import turn_var
@@ -35,6 +39,7 @@ def build_pipeline(
     assistant_context_aggregator,
     pipeline_engine_callback_processor,
     pipeline_metrics_aggregator,
+    termination_funnel,
     voicemail_detector=None,
     recording_router=None,
 ):
@@ -49,9 +54,15 @@ def build_pipeline(
             inserts between callback processor and TTS to route between
             pre-recorded audio playback and dynamic TTS.
     """
-    # Build processors list with optional voicemail detection
+    # Build processors list with optional voicemail detection.
+    #
+    # The termination funnel sits directly behind the input transport so every
+    # other processor's upstream frames pass through it -- that is the only
+    # position from which it can intercept a cancellation on its way to the
+    # pipeline worker.
     processors = [
         transport.input(),  # Transport user input
+        termination_funnel,
         stt,
     ]
 
@@ -102,6 +113,7 @@ def build_realtime_pipeline(
     assistant_context_aggregator,
     pipeline_engine_callback_processor,
     pipeline_metrics_aggregator,
+    termination_funnel,
     voicemail_detector=None,
 ):
     """Build a pipeline for realtime (speech-to-speech) LLM services.
@@ -131,6 +143,7 @@ def build_realtime_pipeline(
     """
     processors = [
         transport.input(),
+        termination_funnel,
         user_context_aggregator,
         realtime_llm,
     ]
@@ -155,7 +168,7 @@ def build_realtime_pipeline(
 def create_pipeline_task(
     pipeline,
     workflow_run_id,
-    audio_config: AudioConfig = None,
+    audio_config: AudioConfig | None = None,
     *,
     conversation_parent_context=None,
     conversation_type: str = "voice",
@@ -197,6 +210,11 @@ def create_pipeline_task(
     task = PipelineWorker(
         pipeline,
         params=pipeline_params,
+        # Pipecat 1.8 replaces ErrorFrame.fatal with processor usability plus
+        # a worker policy. A voice/text model that is permanently unusable
+        # cannot produce a meaningful Dograh run, so preserve the fork's old
+        # fatal-error cancellation behavior through the supported contract.
+        processor_unusable_policy=ProcessorUnusablePolicy.CANCEL,
         enable_tracing=True,
         enable_rtvi=False,
         conversation_id=f"{workflow_run_id}",

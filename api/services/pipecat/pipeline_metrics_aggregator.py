@@ -71,28 +71,14 @@ class PipelineMetricsAggregator(FrameProcessor):
         new_usage = data.value
 
         if key in self._llm_usage_metrics:
-            # Aggregate with existing metrics
-            existing = self._llm_usage_metrics[key]
-            aggregated = LLMTokenUsage(
-                prompt_tokens=existing.prompt_tokens + new_usage.prompt_tokens,
-                completion_tokens=existing.completion_tokens
-                + new_usage.completion_tokens,
-                total_tokens=existing.total_tokens + new_usage.total_tokens,
-                cache_read_input_tokens=(existing.cache_read_input_tokens or 0)
-                + (new_usage.cache_read_input_tokens or 0),
-                cache_creation_input_tokens=(existing.cache_creation_input_tokens or 0)
-                + (new_usage.cache_creation_input_tokens or 0),
-            )
-            self._llm_usage_metrics[key] = aggregated
+            aggregated = self._llm_usage_metrics[key].model_dump()
+            # Sum reported counts, leaving wholly unreported fields as None.
+            for field, value in new_usage.model_dump().items():
+                if value is not None:
+                    aggregated[field] = (aggregated[field] or 0) + value
+            self._llm_usage_metrics[key] = LLMTokenUsage(**aggregated)
         else:
-            # First occurrence for this processor+model combination
-            self._llm_usage_metrics[key] = LLMTokenUsage(
-                prompt_tokens=new_usage.prompt_tokens,
-                completion_tokens=new_usage.completion_tokens,
-                total_tokens=new_usage.total_tokens,
-                cache_read_input_tokens=new_usage.cache_read_input_tokens,
-                cache_creation_input_tokens=new_usage.cache_creation_input_tokens,
-            )
+            self._llm_usage_metrics[key] = new_usage.model_copy()
 
         logger.debug(f"LLM usage metrics: {self._llm_usage_metrics}")
 
@@ -113,10 +99,10 @@ class PipelineMetricsAggregator(FrameProcessor):
         """Get the aggregated STT usage metrics grouped by processor|||model."""
         return self._stt_usage_metrics
 
-    def get_call_duration(self) -> float:
+    def get_call_duration(self) -> int:
         """Get call duration"""
         if self._start_time is None:
-            return 0.0
+            return 0
 
         if self._stop_time is None:
             call_duration = time.time() - self._start_time
@@ -128,15 +114,10 @@ class PipelineMetricsAggregator(FrameProcessor):
 
     def get_all_usage_metrics_serialized(self) -> Dict[str, Dict[str, any]]:
         """Get all aggregated usage metrics in JSON-serializable format."""
-        serialized_llm = {}
-        for key, usage in self._llm_usage_metrics.items():
-            serialized_llm[key] = {
-                "prompt_tokens": usage.prompt_tokens,
-                "completion_tokens": usage.completion_tokens,
-                "total_tokens": usage.total_tokens,
-                "cache_read_input_tokens": usage.cache_read_input_tokens,
-                "cache_creation_input_tokens": usage.cache_creation_input_tokens,
-            }
+        serialized_llm = {
+            key: usage.model_dump(mode="json")
+            for key, usage in self._llm_usage_metrics.items()
+        }
 
         return {
             "llm": serialized_llm,
