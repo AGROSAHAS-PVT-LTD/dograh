@@ -11,11 +11,7 @@ from api.services.workflow.dto import (
 from api.services.workflow.errors import ItemKind, WorkflowError
 from api.services.workflow.node_data import BaseNodeData
 from api.services.workflow.node_specs import all_specs, get_spec
-
-# Regex for matching {{ variable }} template placeholders.
-# Captures: group(1) = variable path, group(2) = filter name, group(3) = filter value.
-# Shared with api.utils.template_renderer via import.
-TEMPLATE_VAR_PATTERN = r"\{\{\s*([^|\s}]+)(?:\s*\|\s*([^:}]+)(?::([^}]+))?)?\s*\}\}"
+from api.utils.template_renderer import TEMPLATE_VAR_PATTERN, is_builtin_variable
 
 # Variables injected by the system at runtime, not from source data.
 _SYSTEM_VARIABLES = {"campaign_id", "provider", "source_uuid"}
@@ -77,6 +73,12 @@ def extract_template_variables(text: str) -> Set[str]:
         # Skip system-injected variables
         if var_name in _SYSTEM_VARIABLES:
             continue
+        # Skip variables the renderer computes itself, such as
+        # current_time_<TZ>. No source data could supply them, so asking a
+        # campaign's contact file for a column named after one rejects a file
+        # that is complete.
+        if is_builtin_variable(var_name):
+            continue
 
         variables.add(var_name)
     return variables
@@ -129,6 +131,10 @@ class Node:
         self.greeting = getattr(data, "greeting", None)
         self.greeting_type = getattr(data, "greeting_type", None)
         self.greeting_recording_id = getattr(data, "greeting_recording_id", None)
+        self.allow_greeting_interrupt = getattr(data, "allow_greeting_interrupt", True)
+        self.greeting_interrupt_min_words = getattr(
+            data, "greeting_interrupt_min_words", 2
+        )
         self.delayed_start = getattr(data, "delayed_start", False)
         self.delayed_start_duration = getattr(data, "delayed_start_duration", None)
         self.tool_uuids = getattr(data, "tool_uuids", None)

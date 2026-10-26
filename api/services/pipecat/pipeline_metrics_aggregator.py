@@ -4,6 +4,7 @@ from typing import Dict, Optional
 
 from loguru import logger
 
+from api.services.pipecat.usage_metrics import LiveUsageMetricsData
 from pipecat.frames.frames import (
     CancelFrame,
     EndFrame,
@@ -14,6 +15,7 @@ from pipecat.frames.frames import (
 from pipecat.metrics.metrics import (
     LLMTokenUsage,
     LLMUsageMetricsData,
+    STTUsageMetricsData,
     TTSUsageMetricsData,
 )
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
@@ -32,6 +34,7 @@ class PipelineMetricsAggregator(FrameProcessor):
         self._llm_usage_metrics: Dict[str, LLMTokenUsage] = {}
         self._tts_usage_metrics: Dict[str, int] = defaultdict(int)
         self._stt_usage_metrics: Dict[str, float] = defaultdict(float)
+        self._live_usage_metrics: Dict[str, float] = defaultdict(float)
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
@@ -48,6 +51,11 @@ class PipelineMetricsAggregator(FrameProcessor):
                     await self._handle_llm_usage_metrics(data)
                 elif isinstance(data, TTSUsageMetricsData):
                     await self._handle_tts_usage_metrics(data)
+                elif isinstance(data, STTUsageMetricsData):
+                    await self._handle_stt_usage_metrics(data)
+                elif isinstance(data, LiveUsageMetricsData):
+                    key = f"{data.processor}|||{data.model}"
+                    self._live_usage_metrics[key] += data.seconds
 
         await self.push_frame(frame, direction)
 
@@ -87,6 +95,10 @@ class PipelineMetricsAggregator(FrameProcessor):
         self._tts_usage_metrics[key] += data.value
         # logger.debug(f"TTS usage metrics: {self._tts_usage_metrics}")
 
+    async def _handle_stt_usage_metrics(self, data: STTUsageMetricsData):
+        key = f"{data.processor}|||{data.model}"
+        self._stt_usage_metrics[key] += data.value.audio_seconds
+
     def get_llm_usage_metrics(self) -> Dict[str, LLMTokenUsage]:
         """Get the aggregated LLM usage metrics grouped by processor|||model."""
         return self._llm_usage_metrics
@@ -119,17 +131,21 @@ class PipelineMetricsAggregator(FrameProcessor):
             for key, usage in self._llm_usage_metrics.items()
         }
 
-        return {
+        usage = {
             "llm": serialized_llm,
             "tts": dict(self._tts_usage_metrics),
             "stt": dict(self._stt_usage_metrics),
             "call_duration_seconds": self.get_call_duration(),
         }
+        if self._live_usage_metrics:
+            usage["live_audio_seconds"] = dict(self._live_usage_metrics)
+        return usage
 
     def reset_metrics(self):
         """Reset all aggregated metrics."""
         self._llm_usage_metrics.clear()
         self._tts_usage_metrics.clear()
         self._stt_usage_metrics.clear()
+        self._live_usage_metrics.clear()
         self._start_time = None
         self._stop_time = None
