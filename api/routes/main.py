@@ -21,7 +21,9 @@ from api.routes.public_embed import router as public_embed_router
 from api.routes.public_embed_chat import router as public_embed_chat_router
 from api.routes.reports import router as reports_router
 from api.routes.s3_signed_url import router as s3_router
+from api.routes.saas_billing import router as saas_billing_router
 from api.routes.service_keys import router as service_keys_router
+from api.routes.team import router as team_router
 from api.routes.superuser import router as superuser_router
 from api.routes.telephony import router as telephony_router
 from api.routes.tool import router as tool_router
@@ -52,6 +54,8 @@ router.include_router(organization_router)
 router.include_router(model_connections_router)
 router.include_router(s3_router)
 router.include_router(service_keys_router)
+router.include_router(team_router)
+router.include_router(saas_billing_router)
 router.include_router(organization_usage_router)
 router.include_router(reports_router)
 router.include_router(webrtc_signaling_router)

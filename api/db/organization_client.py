@@ -12,6 +12,7 @@ from api.db.models import (
     UserModel,
     organization_users_association,
 )
+from api.enums import OrganizationRole
 from api.utils.api_key import generate_api_key
 
 
@@ -128,7 +129,10 @@ class OrganizationClient(BaseDBClient):
             return bool(result.scalar())
 
     async def add_user_to_organization(
-        self, user_id: int, organization_id: int
+        self,
+        user_id: int,
+        organization_id: int,
+        role: OrganizationRole = OrganizationRole.MEMBER,
     ) -> None:
         """Ensure that a user is linked to an organization (many-to-many).
 
@@ -140,7 +144,9 @@ class OrganizationClient(BaseDBClient):
             # This handles race conditions at the database level
 
             stmt = insert(organization_users_association).values(
-                user_id=user_id, organization_id=organization_id
+                user_id=user_id,
+                organization_id=organization_id,
+                role=role.value,
             )
             # ON CONFLICT DO NOTHING - if another request already inserted, this becomes a no-op
             # The primary key constraint on (user_id, organization_id) will trigger the conflict

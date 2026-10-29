@@ -6,7 +6,7 @@ from loguru import logger
 from api.constants import AUTH_PROVIDER, DEPLOYMENT_MODE, DOGRAH_DEPLOYMENT_ID
 from api.db import db_client
 from api.db.models import UserModel
-from api.enums import PostHogEvent
+from api.enums import OrganizationRole, PostHogEvent
 from api.services.auth.stack_auth import stackauth
 from api.services.mps_billing import ensure_signup_grant
 from api.services.organization_bootstrap import ensure_organization_bootstrapped
@@ -119,7 +119,15 @@ async def get_user(
 
         # Check if user's selected organization differs from the current organization
         if user_model.selected_organization_id != organization.id:
-            await db_client.add_user_to_organization(user_model.id, organization.id)
+            await db_client.add_user_to_organization(
+                user_model.id,
+                organization.id,
+                role=(
+                    OrganizationRole.OWNER
+                    if org_was_created
+                    else OrganizationRole.MEMBER
+                ),
+            )
 
             # Update user's selected organization
             await db_client.update_user_selected_organization(

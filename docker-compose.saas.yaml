@@ -1,0 +1,5 @@
+services:
+  api:
+    image: dograhai/dograh-api:saas
+  ui:
+    image: dograhai/dograh-ui:saas

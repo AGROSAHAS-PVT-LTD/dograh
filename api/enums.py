@@ -245,6 +245,30 @@ class ToolStatus(Enum):
     DRAFT = "draft"  # Tool is being configured (not ready for use)
 
 
+class OrganizationRole(str, Enum):
+    OWNER = "owner"
+    ADMIN = "admin"
+    MEMBER = "member"
+
+
+class InvitationStatus(str, Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REVOKED = "revoked"
+    EXPIRED = "expired"
+
+
+class SubscriptionStatus(str, Enum):
+    TRIALING = "trialing"
+    ACTIVE = "active"
+    PAST_DUE = "past_due"
+    CANCELED = "canceled"
+    UNPAID = "unpaid"
+    INCOMPLETE = "incomplete"
+    INCOMPLETE_EXPIRED = "incomplete_expired"
+    PAUSED = "paused"
+
+
 class PostHogEvent(str, Enum):
     """PostHog event names — backend events only."""
 

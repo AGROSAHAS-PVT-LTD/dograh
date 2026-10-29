@@ -37,6 +37,7 @@ from api.services.configuration.masking import (
 from api.services.mps_service_key_client import mps_service_key_client
 from api.services.posthog_tenant import capture_tenant_event
 from api.services.reports import generate_workflow_report_csv
+from api.services.saas.entitlements import assert_agent_capacity
 from api.services.storage import storage_fs
 from api.services.workflow.configuration_policy import (
     ExternalPBXConfigurationDisabledError,
@@ -75,6 +76,15 @@ from api.utils.recording_artifacts import (
 )
 
 router = APIRouter(prefix="/workflow")
+
+
+async def _assert_saas_agent_capacity(user: UserModel) -> None:
+    """Enforce plan agent limits only in hosted/SaaS deployments."""
+    if DEPLOYMENT_MODE == "oss":
+        return
+    if not user.selected_organization_id:
+        raise HTTPException(status_code=400, detail="No organization selected")
+    await assert_agent_capacity(user.selected_organization_id)
 
 
 class ValidateWorkflowResponse(BaseModel):
@@ -481,6 +491,7 @@ async def create_workflow(
         request: The create workflow request
         user: The user to create the workflow for
     """
+    await _assert_saas_agent_capacity(user)
     # Auto-mint trigger_path for any trigger node that didn't ship one so
     # clients don't need to generate UUIDs themselves.
     workflow_definition = ensure_trigger_paths(request.workflow_definition)
@@ -576,6 +587,7 @@ async def create_workflow_from_template(
     Raises:
         HTTPException: If MPS API call fails
     """
+    await _assert_saas_agent_capacity(user)
     try:
         # Call MPS API to generate workflow using the client
         if DEPLOYMENT_MODE == "oss":
@@ -1339,6 +1351,7 @@ async def duplicate_workflow_endpoint(
     user: UserModel = Depends(get_user),
 ) -> WorkflowResponse:
     """Duplicate a workflow including its definition, configuration, recordings, and triggers."""
+    await _assert_saas_agent_capacity(user)
     try:
         workflow = await duplicate_workflow(
             workflow_id=workflow_id,

@@ -27,6 +27,9 @@ from api.constants import DEFAULT_CAMPAIGN_RETRY_CONFIG
 from ..enums import (
     CallType,
     IntegrationAction,
+    InvitationStatus,
+    OrganizationRole,
+    SubscriptionStatus,
     ToolCategory,
     ToolStatus,
     TriggerState,
@@ -48,6 +51,18 @@ organization_users_association = Table(
     Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
     Column(
         "organization_id", Integer, ForeignKey("organizations.id"), primary_key=True
+    ),
+    Column(
+        "role",
+        Enum(
+            "owner",
+            "admin",
+            "member",
+            name="organization_role",
+        ),
+        nullable=False,
+        default=OrganizationRole.MEMBER.value,
+        server_default=text("'member'"),
     ),
 )
 
@@ -193,6 +208,115 @@ class APIKeyModel(Base):
         Index("ix_api_keys_key_hash", "key_hash"),
         Index("ix_api_keys_active", "is_active"),
     )
+
+
+class OrganizationInvitationModel(Base):
+    __tablename__ = "organization_invitations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String(36), nullable=False, unique=True, default=lambda: str(uuid.uuid4()))
+    organization_id = Column(
+        Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+    )
+    email = Column(String, nullable=False)
+    role = Column(
+        Enum("owner", "admin", "member", name="organization_role"),
+        nullable=False,
+        default=OrganizationRole.MEMBER.value,
+        server_default=text("'member'"),
+    )
+    token_hash = Column(String, nullable=False, unique=True, index=True)
+    status = Column(
+        Enum(
+            "pending",
+            "accepted",
+            "revoked",
+            "expired",
+            name="organization_invitation_status",
+        ),
+        nullable=False,
+        default=InvitationStatus.PENDING.value,
+        server_default=text("'pending'"),
+    )
+    invited_by = Column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
+
+    organization = relationship("OrganizationModel")
+    invited_by_user = relationship("UserModel")
+
+    __table_args__ = (
+        Index("ix_organization_invitations_org", "organization_id"),
+        Index("ix_organization_invitations_email", "email"),
+    )
+
+
+class OrganizationSubscriptionModel(Base):
+    __tablename__ = "organization_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(
+        Integer,
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    plan_code = Column(String, nullable=False)
+    provider = Column(String, nullable=False, default="flutterwave")
+    provider_customer_id = Column(String, nullable=True, index=True)
+    provider_subscription_id = Column(String, nullable=True, index=True)
+    provider_plan_id = Column(String, nullable=True, index=True)
+    currency = Column(String(3), nullable=False, default="USD")
+    billing_interval = Column(String, nullable=False, default="monthly")
+    amount_minor = Column(Integer, nullable=True)
+    checkout_tx_ref = Column(String, nullable=True, unique=True, index=True)
+    pending_plan_code = Column(String, nullable=True)
+    pending_currency = Column(String(3), nullable=True)
+    pending_billing_interval = Column(String, nullable=True)
+    pending_amount_minor = Column(Integer, nullable=True)
+    pending_provider_plan_id = Column(String, nullable=True)
+    status = Column(
+        Enum(
+            "trialing",
+            "active",
+            "past_due",
+            "canceled",
+            "unpaid",
+            "incomplete",
+            "incomplete_expired",
+            "paused",
+            name="organization_subscription_status",
+        ),
+        nullable=False,
+        default=SubscriptionStatus.TRIALING.value,
+        server_default=text("'trialing'"),
+    )
+    current_period_start = Column(DateTime(timezone=True), nullable=True)
+    current_period_end = Column(DateTime(timezone=True), nullable=True)
+    cancel_at_period_end = Column(Boolean, nullable=False, default=False, server_default=text("false"))
+    trial_end = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    organization = relationship("OrganizationModel")
+
+
+class BillingEventModel(Base):
+    __tablename__ = "billing_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    provider = Column(String, nullable=False, default="flutterwave")
+    event_key = Column(String, nullable=False, unique=True, index=True)
+    event_type = Column(String, nullable=False)
+    processed_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    payload = Column(JSON, nullable=False, default=dict)
 
 
 class OrganizationConfigurationModel(Base):

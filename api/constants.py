@@ -75,6 +75,30 @@ STACK_AUTH_PROJECT_ID = os.getenv("STACK_AUTH_PROJECT_ID")
 STACK_PUBLISHABLE_CLIENT_KEY = os.getenv("STACK_PUBLISHABLE_CLIENT_KEY")
 DOGRAH_MPS_SECRET_KEY = os.getenv("DOGRAH_MPS_SECRET_KEY", None)
 MPS_API_URL = os.getenv("MPS_API_URL", "https://services.dograh.com")
+
+# SaaS billing with Flutterwave. Leave these unset for the OSS/local
+# deployment; checkout returns a clear 503 until the operator configures them.
+FLW_SECRET_KEY = os.getenv("FLW_SECRET_KEY") or os.getenv("FLUTTERWAVE_SECRET_KEY")
+FLW_PUBLIC_KEY = os.getenv("FLW_PUBLIC_KEY") or os.getenv("FLUTTERWAVE_PUBLIC_KEY")
+# The "secret hash" configured in the Flutterwave dashboard's Webhooks page.
+# Flutterwave sends it back in the verif-hash header.
+FLW_WEBHOOK_SECRET = os.getenv("FLW_WEBHOOK_SECRET") or os.getenv(
+    "FLUTTERWAVE_WEBHOOK_SECRET"
+)
+FLW_API_BASE = os.getenv("FLW_API_BASE", "https://api.flutterwave.com/v3")
+SAAS_TRIAL_DAYS = max(0, int(os.getenv("SAAS_TRIAL_DAYS", "14")))
+
+# Local-currency pricing. Prices are authored in USD and converted with a
+# buffer so small FX movements do not erode margin.
+FX_API_URL = os.getenv("FX_API_URL", "https://open.er-api.com/v6/latest/USD")
+FX_BUFFER_PERCENT = max(0.0, float(os.getenv("FX_BUFFER_PERCENT", "10")))
+FX_CACHE_TTL_SECONDS = max(300, int(os.getenv("FX_CACHE_TTL_SECONDS", "86400")))
+ANNUAL_DISCOUNT_PERCENT = min(
+    100.0, max(0.0, float(os.getenv("ANNUAL_DISCOUNT_PERCENT", "20")))
+)
+# Optional JSON override, e.g. {"NGN": 1650, "GHS": 15.5}. Useful when the
+# public rate provider is unavailable or an operator wants a fixed rate.
+FX_RATES_JSON = os.getenv("FX_RATES_JSON")
 DOGRAH_DEPLOYMENT_ID = os.getenv(
     "DOGRAH_DEPLOYMENT_ID", "oss" if DEPLOYMENT_MODE == "oss" else "us"
 )
