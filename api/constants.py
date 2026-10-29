@@ -58,6 +58,22 @@ BACKEND_API_ENDPOINT = (
 )
 UI_APP_URL = os.getenv("UI_APP_URL", "http://localhost:3010")
 
+# Transactional email (team invitations and future password resets). Leave
+# SMTP_HOST unset to keep emails disabled; invitations still return a copyable
+# link so the product remains usable in local/self-hosted installs.
+SMTP_HOST = os.getenv("SMTP_HOST")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "no-reply@dograh.local")
+SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Dograh")
+SMTP_REPLY_TO = os.getenv("SMTP_REPLY_TO")
+SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+SMTP_USE_SSL = os.getenv("SMTP_USE_SSL", "false").lower() == "true"
+SMTP_TIMEOUT_SECONDS = max(1, int(os.getenv("SMTP_TIMEOUT_SECONDS", "15")))
+EMAIL_DELIVERY_ENABLED = bool(SMTP_HOST)
+
+
 DATABASE_URL = os.environ["DATABASE_URL"]
 REDIS_URL = os.environ["REDIS_URL"]
 

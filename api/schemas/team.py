@@ -20,6 +20,7 @@ class InvitationResponse(BaseModel):
     expires_at: datetime
     created_at: datetime | None = None
     invite_url: str | None = None
+    email_sent: bool = False
 
 
 class TeamResponse(BaseModel):

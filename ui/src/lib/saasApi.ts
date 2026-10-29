@@ -17,6 +17,7 @@ export interface Invitation {
     expires_at: string;
     created_at: string | null;
     invite_url?: string | null;
+    email_sent?: boolean;
 }
 
 export interface TeamResponse {

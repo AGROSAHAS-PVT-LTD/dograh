@@ -101,3 +101,23 @@ regions.
 The backend verifies the Firebase ID token before creating or linking the local
 user, then issues the normal Dograh JWT. Google sign-in links to an existing
 account with the same verified email; phone-only users get a new organization.
+
+### Invitation email delivery
+
+Invitations work without email — the Team page always shows a copyable link.
+To send them automatically, configure SMTP and restart the API:
+
+```dotenv
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=...
+SMTP_PASSWORD=...
+SMTP_FROM_EMAIL=no-reply@yourdomain.com
+SMTP_FROM_NAME=Your Company
+SMTP_USE_TLS=true
+SMTP_USE_SSL=false
+```
+
+Use `SMTP_USE_SSL=true` with port `465` for implicit TLS providers. If SMTP is
+unset or delivery fails, invitation creation still succeeds and the API returns
+`email_sent: false` with the copyable invite link.

@@ -189,6 +189,18 @@ services:
       FIREBASE_APP_ID: "${FIREBASE_APP_ID:-}"
       FIREBASE_MESSAGING_SENDER_ID: "${FIREBASE_MESSAGING_SENDER_ID:-}"
 
+      # Transactional email (invitations / password reset)
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USERNAME: "${SMTP_USERNAME:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      SMTP_FROM_EMAIL: "${SMTP_FROM_EMAIL:-no-reply@dograh.local}"
+      SMTP_FROM_NAME: "${SMTP_FROM_NAME:-Dograh}"
+      SMTP_REPLY_TO: "${SMTP_REPLY_TO:-}"
+      SMTP_USE_TLS: "${SMTP_USE_TLS:-true}"
+      SMTP_USE_SSL: "${SMTP_USE_SSL:-false}"
+      SMTP_TIMEOUT_SECONDS: "${SMTP_TIMEOUT_SECONDS:-15}"
+
       # Database configuration (using containerized postgres)
       DATABASE_URL: "postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/postgres"
 

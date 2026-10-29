@@ -88,7 +88,11 @@ export default function TeamPage() {
       const invitation = await inviteMember(token, email.trim(), inviteRole);
       setInviteUrl(invitation.invite_url ?? null);
       setEmail("");
-      toast.success("Invitation created");
+      toast.success(
+        invitation.email_sent
+          ? "Invitation email sent"
+          : "Invitation created — copy the link below"
+      );
       await loadTeam();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not create invitation");

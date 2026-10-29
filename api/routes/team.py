@@ -24,6 +24,8 @@ from api.services.saas.access import (
     require_organization_roles,
 )
 from api.services.saas.entitlements import assert_seat_capacity, get_entitlements
+from api.services.email import send_invitation_email
+from loguru import logger
 
 router = APIRouter(prefix="/team", tags=["team"])
 
@@ -39,7 +41,10 @@ def _invite_url(token: str) -> str:
 
 
 def _invitation_response(
-    invitation: OrganizationInvitationModel, invite_url: str | None = None
+    invitation: OrganizationInvitationModel,
+    invite_url: str | None = None,
+    *,
+    email_sent: bool = False,
 ) -> InvitationResponse:
     return InvitationResponse(
         id=invitation.id,
@@ -49,6 +54,7 @@ def _invitation_response(
         expires_at=invitation.expires_at,
         created_at=invitation.created_at,
         invite_url=invite_url,
+        email_sent=email_sent,
     )
 
 
@@ -115,7 +121,21 @@ async def invite_member(
         invited_by=access.user.id,
         expires_at=datetime.now(UTC) + timedelta(days=INVITATION_TTL_DAYS),
     )
-    return _invitation_response(invitation, _invite_url(token))
+    invite_url = _invite_url(token)
+    email_sent = False
+    try:
+        email_sent = await send_invitation_email(
+            to_email=str(request.email),
+            invite_url=invite_url,
+            role=request.role.value,
+            inviter_email=access.user.email,
+            expires_at=invitation.expires_at.strftime("%Y-%m-%d %H:%M UTC"),
+        )
+    except Exception as exc:
+        logger.warning(
+            "Could not send invitation email to {}: {}", request.email, exc
+        )
+    return _invitation_response(invitation, invite_url, email_sent=email_sent)
 
 
 @router.delete("/invitations/{invitation_id}", response_model=MessageResponse)
