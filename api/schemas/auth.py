@@ -19,6 +19,10 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class FirebaseAuthRequest(BaseModel):
+    id_token: str
+
+
 class UserResponse(BaseModel):
     id: int
     email: str | None

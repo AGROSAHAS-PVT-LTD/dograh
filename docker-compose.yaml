@@ -178,6 +178,17 @@ services:
       ANNUAL_DISCOUNT_PERCENT: "${ANNUAL_DISCOUNT_PERCENT:-20}"
       SAAS_TRIAL_DAYS: "${SAAS_TRIAL_DAYS:-14}"
 
+      # Stack Auth (optional)
+      STACK_AUTH_PROJECT_ID: "${STACK_AUTH_PROJECT_ID:-}"
+      STACK_PUBLISHABLE_CLIENT_KEY: "${STACK_PUBLISHABLE_CLIENT_KEY:-}"
+
+      # Firebase Authentication (Google + phone/SMS)
+      FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID:-}"
+      FIREBASE_API_KEY: "${FIREBASE_API_KEY:-}"
+      FIREBASE_AUTH_DOMAIN: "${FIREBASE_AUTH_DOMAIN:-}"
+      FIREBASE_APP_ID: "${FIREBASE_APP_ID:-}"
+      FIREBASE_MESSAGING_SENDER_ID: "${FIREBASE_MESSAGING_SENDER_ID:-}"
+
       # Database configuration (using containerized postgres)
       DATABASE_URL: "postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/postgres"
 

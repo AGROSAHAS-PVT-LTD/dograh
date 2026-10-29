@@ -1,11 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
+from starlette.concurrency import run_in_threadpool
 
 from api.constants import ENABLE_SIGNUP
 from api.db import db_client
 from api.db.models import UserModel
 from api.enums import OrganizationRole, PostHogEvent
-from api.schemas.auth import AuthResponse, LoginRequest, SignupRequest, UserResponse
+from api.schemas.auth import (
+    AuthResponse,
+    FirebaseAuthRequest,
+    LoginRequest,
+    SignupRequest,
+    UserResponse,
+)
 from api.services.auth.depends import get_user, require_local_auth
+from api.services.auth.firebase import verify_firebase_id_token
 from api.services.organization_bootstrap import ensure_organization_bootstrapped
 from api.services.posthog_client import capture_event
 from api.services.posthog_tenant import tenant_properties
@@ -118,6 +126,87 @@ async def login(request: LoginRequest):
             id=user.id,
             email=user.email,
             organization_id=user.selected_organization_id,
+            provider_id=user.provider_id,
+        ),
+    )
+
+
+@router.post(
+    "/firebase",
+    response_model=AuthResponse,
+    dependencies=[Depends(require_local_auth)],
+)
+async def firebase_login(request: FirebaseAuthRequest):
+    """Exchange a verified Firebase ID token for a Dograh session.
+
+    Firebase performs Google OAuth and phone/SMS OTP verification in the
+    browser. We still verify the ID token here, then create/link the local user
+    and issue the same JWT used by email/password sign-in.
+    """
+    payload = await run_in_threadpool(verify_firebase_id_token, request.id_token)
+    firebase = payload.get("firebase") or {}
+    sign_in_provider = firebase.get("sign_in_provider")
+    email = payload.get("email")
+    phone_number = payload.get("phone_number")
+    provider_id = f"firebase_{payload['sub']}"
+    display_name = payload.get("name")
+
+    if not ENABLE_SIGNUP:
+        existing = await db_client.get_user_by_provider_id(provider_id)
+        if existing is None and email:
+            existing = await db_client.get_user_by_email(email)
+        if existing is None and phone_number:
+            existing = await db_client.get_user_by_phone(phone_number)
+        if existing is None:
+            raise HTTPException(status_code=403, detail="Signup is disabled")
+
+    user, created = await db_client.get_or_create_firebase_user(
+        provider_id=provider_id,
+        email=email,
+        phone_number=phone_number,
+    )
+
+    organization_id = user.selected_organization_id
+    if organization_id is None:
+        organization = await db_client.get_or_create_organization_by_provider_id(
+            org_provider_id=f"org_{user.provider_id}",
+            user_id=user.id,
+        )
+        organization = organization[0]
+        await db_client.add_user_to_organization(
+            user.id, organization.id, role=OrganizationRole.OWNER
+        )
+        await db_client.update_user_selected_organization(user.id, organization.id)
+        organization_id = organization.id
+        await ensure_organization_bootstrapped(
+            organization.id,
+            created_by=user.provider_id,
+        )
+
+    token = create_jwt_token(
+        user.id,
+        user.email or user.phone_number or user.provider_id,
+    )
+
+    auth_provider = (
+        "firebase_google" if sign_in_provider == "google.com" else "firebase_phone"
+    )
+    capture_event(
+        distinct_id=str(user.provider_id),
+        event=PostHogEvent.SIGNED_UP if created else PostHogEvent.SIGNED_IN,
+        properties={
+            **await tenant_properties(organization_id),
+            "auth_provider": auth_provider,
+        },
+    )
+
+    return AuthResponse(
+        token=token,
+        user=UserResponse(
+            id=user.id,
+            email=user.email,
+            name=display_name,
+            organization_id=organization_id,
             provider_id=user.provider_id,
         ),
     )

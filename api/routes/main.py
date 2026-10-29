@@ -95,6 +95,9 @@ class HealthResponse(BaseModel):
     # be baked into the browser bundle at build time. Both are public values.
     stack_project_id: str | None = None
     stack_publishable_client_key: str | None = None
+    # Public Firebase browser config. Only populated when FIREBASE_* is set.
+    firebase_enabled: bool = False
+    firebase_config: dict[str, str] | None = None
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -106,6 +109,12 @@ async def health() -> HealthResponse:
         DEPLOYMENT_MODE,
         ENABLE_COTURN,
         ENABLE_SIGNUP,
+        FIREBASE_API_KEY,
+        FIREBASE_APP_ID,
+        FIREBASE_AUTH_DOMAIN,
+        FIREBASE_ENABLED,
+        FIREBASE_MESSAGING_SENDER_ID,
+        FIREBASE_PROJECT_ID,
         FORCE_TURN_RELAY,
         STACK_AUTH_PROJECT_ID,
         STACK_PUBLISHABLE_CLIENT_KEY,
@@ -125,6 +134,17 @@ async def health() -> HealthResponse:
         else None
     )
     is_stack = AUTH_PROVIDER == "stack"
+    firebase_config = (
+        {
+            "apiKey": FIREBASE_API_KEY or "",
+            "authDomain": FIREBASE_AUTH_DOMAIN or "",
+            "projectId": FIREBASE_PROJECT_ID or "",
+            "appId": FIREBASE_APP_ID or "",
+            "messagingSenderId": FIREBASE_MESSAGING_SENDER_ID or "",
+        }
+        if FIREBASE_ENABLED
+        else None
+    )
     return HealthResponse(
         status="ok",
         version=APP_VERSION,
@@ -139,6 +159,8 @@ async def health() -> HealthResponse:
         stack_publishable_client_key=(
             STACK_PUBLISHABLE_CLIENT_KEY if is_stack else None
         ),
+        firebase_enabled=FIREBASE_ENABLED,
+        firebase_config=firebase_config,
     )
 
 

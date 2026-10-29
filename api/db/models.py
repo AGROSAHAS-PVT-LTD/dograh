@@ -84,6 +84,7 @@ class UserModel(Base):
     )
     is_superuser = Column(Boolean, default=False)
     email = Column(String, nullable=True)
+    phone_number = Column(String, nullable=True)
     password_hash = Column(String, nullable=True)
 
     __table_args__ = (
@@ -92,6 +93,12 @@ class UserModel(Base):
             func.lower(email),
             unique=True,
             postgresql_where=text("email IS NOT NULL"),
+        ),
+        Index(
+            "ix_users_phone_number",
+            phone_number,
+            unique=True,
+            postgresql_where=text("phone_number IS NOT NULL"),
         ),
     )
 

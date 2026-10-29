@@ -78,3 +78,26 @@ https://<your-public-api-host>/api/v1/saas/webhook/flutterwave
 Local checkout stays disabled until `FLW_SECRET_KEY` is set. `FX_RATES_JSON`
 can pin rates, for example `FX_RATES_JSON={"NGN":1650,"GHS":15.5}`.
 
+## Google + SMS sign-in (Firebase)
+
+Create a Firebase web app, enable **Google** and **Phone** under Authentication
+→ Sign-in method, then add the same values to `.env` and restart both the API
+and UI containers:
+
+```dotenv
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_API_KEY=AIza...
+FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+FIREBASE_APP_ID=1:...:web:...
+FIREBASE_MESSAGING_SENDER_ID=...
+```
+
+The UI reads this public config from the API at runtime. Add every deployment
+origin — `localhost`, `127.0.0.1`, and your production domain — to Firebase
+Authentication → Settings → **Authorized domains**. Firebase phone auth uses
+reCAPTCHA and may require the Firebase Blaze plan for SMS delivery in some
+regions.
+
+The backend verifies the Firebase ID token before creating or linking the local
+user, then issues the normal Dograh JWT. Google sign-in links to an existing
+account with the same verified email; phone-only users get a new organization.

@@ -73,6 +73,31 @@ ENABLE_SIGNUP = os.getenv("ENABLE_SIGNUP", "true").lower() == "true"
 # needs them baked into the bundle at build time.
 STACK_AUTH_PROJECT_ID = os.getenv("STACK_AUTH_PROJECT_ID")
 STACK_PUBLISHABLE_CLIENT_KEY = os.getenv("STACK_PUBLISHABLE_CLIENT_KEY")
+
+# Firebase Authentication (Google + phone/SMS). The project id is also the
+# audience used to verify Firebase ID tokens on the API. The remaining values
+# are public browser configuration and are returned by /health at runtime.
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID") or os.getenv(
+    "NEXT_PUBLIC_FIREBASE_PROJECT_ID"
+)
+FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY") or os.getenv(
+    "NEXT_PUBLIC_FIREBASE_API_KEY"
+)
+FIREBASE_AUTH_DOMAIN = os.getenv("FIREBASE_AUTH_DOMAIN") or os.getenv(
+    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"
+)
+FIREBASE_APP_ID = os.getenv("FIREBASE_APP_ID") or os.getenv(
+    "NEXT_PUBLIC_FIREBASE_APP_ID"
+)
+FIREBASE_MESSAGING_SENDER_ID = os.getenv(
+    "FIREBASE_MESSAGING_SENDER_ID"
+) or os.getenv("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID")
+if not FIREBASE_AUTH_DOMAIN and FIREBASE_PROJECT_ID:
+    FIREBASE_AUTH_DOMAIN = f"{FIREBASE_PROJECT_ID}.firebaseapp.com"
+FIREBASE_ENABLED = bool(
+    FIREBASE_PROJECT_ID and FIREBASE_API_KEY and FIREBASE_APP_ID
+)
+
 DOGRAH_MPS_SECRET_KEY = os.getenv("DOGRAH_MPS_SECRET_KEY", None)
 MPS_API_URL = os.getenv("MPS_API_URL", "https://services.dograh.com")
 

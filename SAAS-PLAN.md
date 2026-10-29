@@ -45,17 +45,18 @@ Add:
 
 ### Authentication
 
-Use Stack Auth for hosted SaaS because the API already supports `AUTH_PROVIDER=stack`.
+Use **Firebase Authentication** for Google sign-in and phone/SMS OTP:
 
-Add:
+- Firebase JS SDK runs in the browser and handles Google popup sign-in and phone verification.
+- The API verifies the Firebase ID token with `google.oauth2.id_token.verify_firebase_token`.
+- Dograh still issues its own JWT/httpOnly-cookie session, so existing authorization and tenant checks are unchanged.
+- Google accounts link to an existing local account with the same verified email.
+- Phone-only accounts get a new organization.
+- Set `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_APP_ID`, and `FIREBASE_MESSAGING_SENDER_ID`.
+- Add every deployment origin to Firebase Authentication → Settings → Authorized domains.
+- Firebase phone auth uses reCAPTCHA and may require the Blaze plan for SMS delivery.
 
-- Google sign-in and email magic links
-- Email verification and password reset
-- Organization invitations
-- Session revocation
-- Superadmin access separated from customer organizations
-
-Keep local auth for development only.
+Keep local email/password auth for development and as a fallback. Stack Auth remains optional for deployments that already use it.
 
 ### Billing
 
@@ -134,11 +135,12 @@ Do not start with Kubernetes. Move to Kubernetes only after sustained load or en
 - Pricing and plan limits
 - BYOK vs. managed credits
 - Target market and support policy
-- Flutterwave, cloud, and email accounts
+- Flutterwave, Firebase, cloud, and email accounts
 
 ### Phase 1 — tenant and auth hardening
 
 - Roles and invitations
+- Firebase Google + phone/SMS sign-in
 - Email verification/password reset
 - Organization switcher
 - Audit logging
@@ -203,7 +205,7 @@ Do not start with Kubernetes. Move to Kubernetes only after sustained load or en
 - Three plans: Starter, Growth, Scale
 - 14-day trial
 - Shared infrastructure, one region
-- Google + email auth
+- Google + phone/SMS auth via Firebase, with email/password fallback
 - Flutterwave subscriptions in local currencies
 - Customer-owned telephony
 - Hard limits on agents, concurrency, and monthly calls

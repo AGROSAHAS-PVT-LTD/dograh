@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 
 from api.db.base_client import BaseDBClient
@@ -164,3 +165,129 @@ class UserClient(BaseDBClient):
             await session.commit()
             await session.refresh(user)
             return user
+
+    async def get_user_by_provider_id(self, provider_id: str) -> UserModel | None:
+        async with self.async_session() as session:
+            result = await session.execute(
+                select(UserModel).where(UserModel.provider_id == provider_id)
+            )
+            return result.scalars().first()
+
+    async def get_user_by_phone(self, phone_number: str) -> UserModel | None:
+        """Fetch a user by E.164 phone number."""
+        normalized = phone_number.strip()
+        async with self.async_session() as session:
+            result = await session.execute(
+                select(UserModel).where(UserModel.phone_number == normalized)
+            )
+            return result.scalars().first()
+
+    async def update_user_profile(
+        self,
+        user_id: int,
+        *,
+        email: str | None = None,
+        phone_number: str | None = None,
+    ) -> None:
+        """Update identity fields supplied by an external auth provider."""
+        values: dict[str, str] = {}
+        if email:
+            values["email"] = email.lower()
+        if phone_number:
+            values["phone_number"] = phone_number.strip()
+        if not values:
+            return
+        async with self.async_session() as session:
+            from sqlalchemy import update
+
+            await session.execute(
+                update(UserModel).where(UserModel.id == user_id).values(**values)
+            )
+            await session.commit()
+
+    async def get_or_create_firebase_user(
+        self,
+        *,
+        provider_id: str,
+        email: str | None = None,
+        phone_number: str | None = None,
+    ) -> tuple[UserModel, bool]:
+        """Link a Firebase UID to a local user.
+
+        Firebase users are matched by UID first, then by verified email or
+        phone. Matching by email lets an existing email/password account keep
+        its organization when the same person uses Google sign-in.
+        """
+        normalized_email = email.lower() if email else None
+        normalized_phone = phone_number.strip() if phone_number else None
+
+        async with self.async_session() as session:
+            result = await session.execute(
+                select(UserModel).where(UserModel.provider_id == provider_id)
+            )
+            user = result.scalars().first()
+
+            if user is None and normalized_email:
+                result = await session.execute(
+                    select(UserModel).where(
+                        func.lower(UserModel.email) == normalized_email
+                    )
+                )
+                user = result.scalars().first()
+
+            if user is None and normalized_phone:
+                result = await session.execute(
+                    select(UserModel).where(
+                        UserModel.phone_number == normalized_phone
+                    )
+                )
+                user = result.scalars().first()
+
+            if user is not None:
+                if normalized_email and user.email != normalized_email:
+                    user.email = normalized_email
+                if normalized_phone and user.phone_number != normalized_phone:
+                    user.phone_number = normalized_phone
+                await session.commit()
+                await session.refresh(user)
+                return user, False
+
+            stmt = insert(UserModel.__table__).values(
+                provider_id=provider_id,
+                email=normalized_email,
+                phone_number=normalized_phone,
+                created_at=datetime.now(timezone.utc),
+                selected_organization_id=None,
+                is_superuser=False,
+            )
+            stmt = stmt.on_conflict_do_nothing(index_elements=["provider_id"])
+            try:
+                result = await session.execute(stmt)
+                await session.commit()
+                was_created = result.rowcount > 0
+            except IntegrityError:
+                # A concurrent request may have inserted the same email/phone.
+                await session.rollback()
+                was_created = False
+
+            result = await session.execute(
+                select(UserModel).where(UserModel.provider_id == provider_id)
+            )
+            user = result.scalars().first()
+            if user is None and normalized_email:
+                result = await session.execute(
+                    select(UserModel).where(
+                        func.lower(UserModel.email) == normalized_email
+                    )
+                )
+                user = result.scalars().first()
+            if user is None and normalized_phone:
+                result = await session.execute(
+                    select(UserModel).where(
+                        UserModel.phone_number == normalized_phone
+                    )
+                )
+                user = result.scalars().first()
+            if user is None:
+                raise ValueError("Failed to create or fetch Firebase user")
+        return user, was_created

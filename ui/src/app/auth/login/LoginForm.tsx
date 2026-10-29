@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { loginApiV1AuthLoginPost } from "@/client/sdk.gen";
 import { AuthEnterpriseCTA } from "@/components/auth/AuthEnterpriseCTA";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { FirebaseAuthButtons } from "@/components/auth/FirebaseAuthButtons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,6 +83,8 @@ export function LoginForm({ signupEnabled }: { signupEnabled: boolean }) {
           {loading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
+
+      <FirebaseAuthButtons />
 
       {signupEnabled && (
         <p className="text-center text-sm text-muted-foreground">
