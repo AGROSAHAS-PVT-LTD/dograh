@@ -83,6 +83,27 @@ async def test_email_uses_starttls_and_login(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_password_reset_email_contains_link(monkeypatch):
+    captured = {}
+
+    async def fake_send(**kwargs):
+        captured.update(kwargs)
+        return True
+
+    monkeypatch.setattr(email_service, "send_email", fake_send)
+    sent = await email_service.send_password_reset_email(
+        to_email="person@example.com",
+        reset_url="https://app.example.com/auth/reset?token=abc",
+        expires_minutes=60,
+    )
+
+    assert sent is True
+    assert captured["subject"] == "Reset your Dograh password"
+    assert "https://app.example.com/auth/reset?token=abc" in captured["text_body"]
+    assert "60 minutes" in captured["html_body"]
+
+
+@pytest.mark.asyncio
 async def test_invitation_email_contains_link_and_escapes_html(monkeypatch):
     captured = {}
 

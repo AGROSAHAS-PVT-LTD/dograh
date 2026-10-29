@@ -1,7 +1,12 @@
+import hashlib
+import secrets
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
+from loguru import logger
 from starlette.concurrency import run_in_threadpool
 
-from api.constants import ENABLE_SIGNUP
+from api.constants import ENABLE_SIGNUP, UI_APP_URL
 from api.db import db_client
 from api.db.models import UserModel
 from api.enums import OrganizationRole, PostHogEvent
@@ -9,11 +14,14 @@ from api.schemas.auth import (
     AuthResponse,
     FirebaseAuthRequest,
     LoginRequest,
+    PasswordResetConfirm,
+    PasswordResetRequest,
     SignupRequest,
     UserResponse,
 )
 from api.services.auth.depends import get_user, require_local_auth
 from api.services.auth.firebase import verify_firebase_id_token
+from api.services.email import send_password_reset_email
 from api.services.organization_bootstrap import ensure_organization_bootstrapped
 from api.services.posthog_client import capture_event
 from api.services.posthog_tenant import tenant_properties
@@ -23,6 +31,12 @@ router = APIRouter(
     prefix="/auth",
     tags=["auth"],
 )
+
+PASSWORD_RESET_TTL_MINUTES = 60
+
+
+def _reset_token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 @router.post(
@@ -210,6 +224,59 @@ async def firebase_login(request: FirebaseAuthRequest):
             provider_id=user.provider_id,
         ),
     )
+
+
+@router.post(
+    "/password/request",
+    dependencies=[Depends(require_local_auth)],
+)
+async def request_password_reset(request: PasswordResetRequest) -> dict:
+    """Start a password reset without revealing whether the email exists."""
+    generic = {
+        "message": "If an account exists for that email, a reset link has been sent."
+    }
+    user = await db_client.get_user_by_email(str(request.email))
+    if user is None or not user.password_hash:
+        return generic
+
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(UTC) + timedelta(minutes=PASSWORD_RESET_TTL_MINUTES)
+    await db_client.create_password_reset_token(
+        user_id=user.id,
+        token_hash=_reset_token_hash(token),
+        expires_at=expires_at,
+    )
+    reset_url = f"{UI_APP_URL.rstrip('/')}/auth/reset?token={token}"
+    try:
+        await send_password_reset_email(
+            to_email=str(request.email),
+            reset_url=reset_url,
+            expires_minutes=PASSWORD_RESET_TTL_MINUTES,
+        )
+    except Exception as exc:
+        logger.warning("Could not send password reset email: {}", exc)
+    return generic
+
+
+@router.post(
+    "/password/reset",
+    dependencies=[Depends(require_local_auth)],
+)
+async def reset_password(request: PasswordResetConfirm) -> dict:
+    record = await db_client.get_password_reset_token(
+        _reset_token_hash(request.token)
+    )
+    if record is None or record.used_at is not None:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    if record.expires_at <= datetime.now(UTC):
+        raise HTTPException(status_code=410, detail="Reset token has expired")
+
+    if not await db_client.consume_password_reset_token(record.id):
+        raise HTTPException(status_code=409, detail="Reset token has already been used")
+    await db_client.update_user_password(
+        record.user_id, hash_password(request.password)
+    )
+    return {"message": "Password updated. You can now sign in."}
 
 
 @router.get("/me", response_model=UserResponse)

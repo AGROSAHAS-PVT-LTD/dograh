@@ -91,6 +91,43 @@ async def send_email(
     return True
 
 
+async def send_password_reset_email(
+    *, to_email: str, reset_url: str, expires_minutes: int
+) -> bool:
+    safe_url = html.escape(reset_url, quote=True)
+    subject = "Reset your Dograh password"
+    text_body = (
+        "We received a request to reset your Dograh password.\n\n"
+        f"Reset it here: {reset_url}\n\n"
+        f"This link expires in {expires_minutes} minutes. If you did not request "
+        "this, you can safely ignore this email."
+    )
+    html_body = f"""\
+<!doctype html>
+<html>
+  <body style="font-family: Arial, sans-serif; color: #111827; line-height: 1.5;">
+    <h2 style="margin-bottom: 8px;">Reset your password</h2>
+    <p>We received a request to reset your Dograh password.</p>
+    <p style="margin: 24px 0;">
+      <a href="{safe_url}"
+         style="background:#111827;color:#ffffff;padding:12px 20px;
+                border-radius:6px;text-decoration:none;display:inline-block;">
+        Reset password
+      </a>
+    </p>
+    <p style="font-size: 13px; color: #6b7280;">
+      This link expires in {expires_minutes} minutes. If you did not request
+      this, you can safely ignore this email.
+    </p>
+  </body>
+</html>"""
+    return await send_email(
+        to_email=to_email,
+        subject=subject,
+        text_body=text_body,
+        html_body=html_body,
+    )
+
 async def send_invitation_email(
     *,
     to_email: str,

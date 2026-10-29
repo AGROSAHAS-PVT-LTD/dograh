@@ -78,6 +78,14 @@ export function LoginForm({ signupEnabled }: { signupEnabled: boolean }) {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+          <div className="text-right">
+            <Link
+              href="/auth/forgot-password"
+              className="text-xs text-primary underline-offset-4 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}

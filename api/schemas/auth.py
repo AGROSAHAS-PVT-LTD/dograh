@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class SignupRequest(BaseModel):
@@ -21,6 +21,22 @@ class LoginRequest(BaseModel):
 
 class FirebaseAuthRequest(BaseModel):
     id_token: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str = Field(min_length=20)
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
 
 
 class UserResponse(BaseModel):

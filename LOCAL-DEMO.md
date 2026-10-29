@@ -121,3 +121,9 @@ SMTP_USE_SSL=false
 Use `SMTP_USE_SSL=true` with port `465` for implicit TLS providers. If SMTP is
 unset or delivery fails, invitation creation still succeeds and the API returns
 `email_sent: false` with the copyable invite link.
+
+### Password reset
+
+Local email/password accounts can request a reset from `/auth/login`. Reset
+links are single-use and expire after 60 minutes. SMTP must be configured for
+the email to be delivered.

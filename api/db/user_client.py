@@ -1,13 +1,13 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 
 from api.db.base_client import BaseDBClient
-from api.db.models import UserConfigurationModel, UserModel
+from api.db.models import UserConfigurationModel, UserModel, PasswordResetTokenModel
 
 
 class UserClient(BaseDBClient):
@@ -291,3 +291,59 @@ class UserClient(BaseDBClient):
             if user is None:
                 raise ValueError("Failed to create or fetch Firebase user")
         return user, was_created
+
+    async def create_password_reset_token(
+        self, user_id: int, token_hash: str, expires_at: datetime
+    ) -> None:
+        """Invalidate older unused tokens and create a new single-use token."""
+        async with self.async_session() as session:
+            await session.execute(
+                update(PasswordResetTokenModel)
+                .where(
+                    PasswordResetTokenModel.user_id == user_id,
+                    PasswordResetTokenModel.used_at.is_(None),
+                )
+                .values(used_at=datetime.now(timezone.utc))
+            )
+            session.add(
+                PasswordResetTokenModel(
+                    user_id=user_id,
+                    token_hash=token_hash,
+                    expires_at=expires_at,
+                    created_at=datetime.now(timezone.utc),
+                )
+            )
+            await session.commit()
+
+    async def get_password_reset_token(
+        self, token_hash: str
+    ) -> PasswordResetTokenModel | None:
+        async with self.async_session() as session:
+            result = await session.execute(
+                select(PasswordResetTokenModel).where(
+                    PasswordResetTokenModel.token_hash == token_hash
+                )
+            )
+            return result.scalars().first()
+
+    async def consume_password_reset_token(self, token_id: int) -> bool:
+        async with self.async_session() as session:
+            result = await session.execute(
+                update(PasswordResetTokenModel)
+                .where(
+                    PasswordResetTokenModel.id == token_id,
+                    PasswordResetTokenModel.used_at.is_(None),
+                )
+                .values(used_at=datetime.now(timezone.utc))
+            )
+            await session.commit()
+            return bool(result.rowcount)
+
+    async def update_user_password(self, user_id: int, password_hash: str) -> None:
+        async with self.async_session() as session:
+            await session.execute(
+                update(UserModel)
+                .where(UserModel.id == user_id)
+                .values(password_hash=password_hash)
+            )
+            await session.commit()
