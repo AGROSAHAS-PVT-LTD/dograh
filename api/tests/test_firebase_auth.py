@@ -71,10 +71,9 @@ async def test_firebase_login_respects_signup_disabled(monkeypatch):
     )
 
     with pytest.raises(HTTPException) as exc:
-        await auth_routes.firebase_login(
-            FirebaseAuthRequest(id_token="firebase-token")
-        )
+        await auth_routes.firebase_login(FirebaseAuthRequest(id_token="firebase-token"))
     assert exc.value.status_code == 403
+
 
 @pytest.mark.asyncio
 async def test_firebase_login_creates_organization(monkeypatch):
@@ -99,19 +98,13 @@ async def test_firebase_login_creates_organization(monkeypatch):
         "get_or_create_organization_by_provider_id",
         AsyncMock(return_value=(org, True)),
     )
-    monkeypatch.setattr(
-        auth_routes.db_client, "add_user_to_organization", AsyncMock()
-    )
+    monkeypatch.setattr(auth_routes.db_client, "add_user_to_organization", AsyncMock())
     monkeypatch.setattr(
         auth_routes.db_client, "update_user_selected_organization", AsyncMock()
     )
-    monkeypatch.setattr(
-        auth_routes, "ensure_organization_bootstrapped", AsyncMock()
-    )
+    monkeypatch.setattr(auth_routes, "ensure_organization_bootstrapped", AsyncMock())
     monkeypatch.setattr(auth_routes, "capture_event", lambda **kwargs: None)
-    monkeypatch.setattr(
-        auth_routes, "tenant_properties", AsyncMock(return_value={})
-    )
+    monkeypatch.setattr(auth_routes, "tenant_properties", AsyncMock(return_value={}))
 
     response = await auth_routes.firebase_login(
         FirebaseAuthRequest(id_token="firebase-token")

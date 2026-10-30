@@ -39,9 +39,7 @@ def test_flutterwave_webhook_accepts_matching_secret_hash(monkeypatch):
 def test_flutterwave_webhook_rejects_bad_hash(monkeypatch):
     monkeypatch.setattr(flutterwave_client, "FLW_WEBHOOK_SECRET", "flw_secret")
     with pytest.raises(HTTPException) as exc:
-        flutterwave_client.verify_webhook(
-            b'{"event":"charge.completed"}', "wrong"
-        )
+        flutterwave_client.verify_webhook(b'{"event":"charge.completed"}', "wrong")
     assert exc.value.status_code == 400
 
 
@@ -64,4 +62,3 @@ def test_plan_lookup_uses_catalog():
     for code, plan in PLANS.items():
         assert plan.code == code
         assert plan.limits["agents"] >= 1
-

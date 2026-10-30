@@ -38,4 +38,3 @@ class CancelResponse(BaseModel):
 
 class SubscriptionResponse(BaseModel):
     entitlements: dict[str, Any]
-

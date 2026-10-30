@@ -30,6 +30,7 @@ from pipecat.frames.frames import (
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.services.llm_service import FunctionCallParams
+from pipecat.tests import MockLLMService, run_test
 
 from api.enums import WorkflowRunMode
 from api.services.configuration.masking import mask_key
@@ -41,7 +42,6 @@ from api.services.workflow.tools.custom_tool import (
 )
 from api.tests.pipecat_test_utils import stub_agent_runtime
 from api.utils.template_renderer import render_url_template
-from pipecat.tests import MockLLMService, run_test
 
 
 @dataclass

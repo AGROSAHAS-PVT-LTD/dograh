@@ -16,20 +16,24 @@ from api.schemas.billing_saas import (
 )
 from api.services.saas.access import OrganizationAccess, require_organization_roles
 from api.services.saas.entitlements import get_entitlements
-from api.services.saas.fx import (
-    CURRENCY_COUNTRIES,
-    currency_decimals,
-    quote as price_quote,
-)
 from api.services.saas.flutterwave_client import (
     cancel_subscription,
-    create_checkout as create_flw_checkout,
     create_payment_plan,
     find_subscription_id,
     new_tx_ref,
     verify_by_reference,
     verify_transaction,
     verify_webhook,
+)
+from api.services.saas.flutterwave_client import (
+    create_checkout as create_flw_checkout,
+)
+from api.services.saas.fx import (
+    CURRENCY_COUNTRIES,
+    currency_decimals,
+)
+from api.services.saas.fx import (
+    quote as price_quote,
 )
 from api.services.saas.plans import (
     BILLING_INTERVALS,
@@ -99,9 +103,7 @@ def _plan_id_from_payload(data: dict[str, Any]) -> str | None:
 
 
 @router.get("/plans")
-async def list_plans(
-    currency: str = "USD", billing_interval: str = "monthly"
-) -> dict:
+async def list_plans(currency: str = "USD", billing_interval: str = "monthly") -> dict:
     if billing_interval not in BILLING_INTERVALS:
         raise HTTPException(status_code=400, detail="Invalid billing interval")
     plans = []
@@ -157,9 +159,7 @@ async def create_checkout(
             status_code=400,
             detail="Your account needs an email address for billing",
         )
-    localized = await price_quote(
-        plan, request.currency, request.billing_interval
-    )
+    localized = await price_quote(plan, request.currency, request.billing_interval)
     subscription = await db_client.get_subscription(access.organization_id)
 
     provider_plan_id = None
@@ -187,14 +187,10 @@ async def create_checkout(
         )
         provider_plan_id = str(flw_plan["id"])
 
-    tx_ref = new_tx_ref(
-        access.organization_id, plan.code, request.billing_interval
-    )
+    tx_ref = new_tx_ref(access.organization_id, plan.code, request.billing_interval)
     active_plan_code = subscription.plan_code if subscription else TRIAL_PLAN.code
     active_status = (
-        subscription.status
-        if subscription
-        else SubscriptionStatus.TRIALING.value
+        subscription.status if subscription else SubscriptionStatus.TRIALING.value
     )
     await db_client.upsert_subscription(
         organization_id=access.organization_id,
@@ -207,13 +203,9 @@ async def create_checkout(
         provider_subscription_id=(
             subscription.provider_subscription_id if subscription else None
         ),
-        provider_plan_id=(
-            subscription.provider_plan_id if subscription else None
-        ),
+        provider_plan_id=(subscription.provider_plan_id if subscription else None),
         currency=subscription.currency if subscription else "USD",
-        billing_interval=(
-            subscription.billing_interval if subscription else "monthly"
-        ),
+        billing_interval=(subscription.billing_interval if subscription else "monthly"),
         amount_minor=subscription.amount_minor if subscription else 0,
         checkout_tx_ref=tx_ref,
         pending_plan_code=plan.code,
@@ -224,9 +216,7 @@ async def create_checkout(
         current_period_start=(
             subscription.current_period_start if subscription else None
         ),
-        current_period_end=(
-            subscription.current_period_end if subscription else None
-        ),
+        current_period_end=(subscription.current_period_end if subscription else None),
         cancel_at_period_end=(
             subscription.cancel_at_period_end if subscription else False
         ),
@@ -416,9 +406,7 @@ async def cancel_plan(
         SubscriptionStatus.CANCELED,
         cancel_at_period_end=False,
     )
-    return CancelResponse(
-        message="Subscription cancelled", cancel_at_period_end=False
-    )
+    return CancelResponse(message="Subscription cancelled", cancel_at_period_end=False)
 
 
 async def _subscription_for_event(data: dict[str, Any]):
@@ -500,4 +488,3 @@ async def flutterwave_webhook(request: Request) -> dict:
         payload=event,
     )
     return {"received": True, "duplicate": not is_new}
-

@@ -88,9 +88,7 @@ async def get_entitlements(organization_id: int) -> dict[str, Any]:
         else plan.usd_cents(billing_interval)
     )
     price_display = (
-        format_amount(currency, amount_minor)
-        if amount_minor is not None
-        else None
+        format_amount(currency, amount_minor) if amount_minor is not None else None
     )
 
     members = await db_client.get_organization_members_with_roles(organization_id)

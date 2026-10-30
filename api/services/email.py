@@ -128,6 +128,7 @@ async def send_password_reset_email(
         html_body=html_body,
     )
 
+
 async def send_invitation_email(
     *,
     to_email: str,
@@ -176,4 +177,3 @@ async def send_invitation_email(
         text_body=text_body,
         html_body=html_body,
     )
-

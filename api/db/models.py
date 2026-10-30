@@ -221,7 +221,9 @@ class OrganizationInvitationModel(Base):
     __tablename__ = "organization_invitations"
 
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String(36), nullable=False, unique=True, default=lambda: str(uuid.uuid4()))
+    uuid = Column(
+        String(36), nullable=False, unique=True, default=lambda: str(uuid.uuid4())
+    )
     organization_id = Column(
         Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
@@ -303,7 +305,9 @@ class OrganizationSubscriptionModel(Base):
     )
     current_period_start = Column(DateTime(timezone=True), nullable=True)
     current_period_end = Column(DateTime(timezone=True), nullable=True)
-    cancel_at_period_end = Column(Boolean, nullable=False, default=False, server_default=text("false"))
+    cancel_at_period_end = Column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
     trial_end = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(

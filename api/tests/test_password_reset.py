@@ -56,9 +56,7 @@ async def test_password_reset_updates_hash_and_consumes_token(monkeypatch):
         "get_password_reset_token",
         AsyncMock(return_value=record),
     )
-    monkeypatch.setattr(
-        auth_routes.db_client, "consume_password_reset_token", consume
-    )
+    monkeypatch.setattr(auth_routes.db_client, "consume_password_reset_token", consume)
     monkeypatch.setattr(auth_routes.db_client, "update_user_password", update)
 
     response = await auth_routes.reset_password(

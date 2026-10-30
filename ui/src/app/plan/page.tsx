@@ -17,12 +17,12 @@ import { useAuth } from "@/lib/auth";
 import {
   cancelSubscription,
   createCheckout,
-  getPlans,
-  getSubscription,
-  verifyCheckout,
   type CurrencyOption,
   type Entitlements,
+  getPlans,
+  getSubscription,
   type Plan,
+  verifyCheckout,
 } from "@/lib/saasApi";
 
 type BillingInterval = "monthly" | "annual";

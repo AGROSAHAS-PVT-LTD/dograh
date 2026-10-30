@@ -1,5 +1,3 @@
-from unittest.mock import AsyncMock
-
 import pytest
 
 from api.services import email as email_service
@@ -79,7 +77,9 @@ async def test_email_uses_starttls_and_login(monkeypatch):
     assert smtp.logged_in == ("user", "pass")
     assert smtp.message["To"] == "person@example.com"
     assert smtp.message["Subject"] == "Hello"
-    assert "Plain body" in smtp.message.get_body(preferencelist=("plain",)).get_content()
+    assert (
+        "Plain body" in smtp.message.get_body(preferencelist=("plain",)).get_content()
+    )
 
 
 @pytest.mark.asyncio

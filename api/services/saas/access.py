@@ -27,16 +27,18 @@ async def get_organization_access(
 
     role_value = await db_client.get_user_role(user.id, organization_id)
     if role_value is None:
-        if not await db_client.is_user_member_of_organization(
-            user.id, organization_id
-        ):
-            raise HTTPException(status_code=403, detail="Not a member of this organization")
+        if not await db_client.is_user_member_of_organization(user.id, organization_id):
+            raise HTTPException(
+                status_code=403, detail="Not a member of this organization"
+            )
         role_value = OrganizationRole.MEMBER.value
 
     try:
         role = OrganizationRole(role_value)
     except ValueError as exc:
-        raise HTTPException(status_code=403, detail="Invalid organization role") from exc
+        raise HTTPException(
+            status_code=403, detail="Invalid organization role"
+        ) from exc
 
     return OrganizationAccess(
         user=user,

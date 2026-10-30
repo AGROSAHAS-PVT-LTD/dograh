@@ -81,7 +81,8 @@ class SaaSClient(BaseDBClient):
                 .select_from(organization_users_association)
                 .where(
                     organization_users_association.c.organization_id == organization_id,
-                    organization_users_association.c.role == OrganizationRole.OWNER.value,
+                    organization_users_association.c.role
+                    == OrganizationRole.OWNER.value,
                 )
             )
             return int(result.scalar_one())
@@ -131,7 +132,8 @@ class SaaSClient(BaseDBClient):
                 select(OrganizationInvitationModel)
                 .where(
                     OrganizationInvitationModel.organization_id == organization_id,
-                    OrganizationInvitationModel.status == InvitationStatus.PENDING.value,
+                    OrganizationInvitationModel.status
+                    == InvitationStatus.PENDING.value,
                     OrganizationInvitationModel.expires_at > datetime.now(UTC),
                 )
                 .order_by(OrganizationInvitationModel.created_at.desc())
@@ -158,7 +160,8 @@ class SaaSClient(BaseDBClient):
                 .where(
                     OrganizationInvitationModel.organization_id == organization_id,
                     OrganizationInvitationModel.email == email.strip().lower(),
-                    OrganizationInvitationModel.status == InvitationStatus.PENDING.value,
+                    OrganizationInvitationModel.status
+                    == InvitationStatus.PENDING.value,
                     OrganizationInvitationModel.expires_at > datetime.now(UTC),
                 )
                 .order_by(OrganizationInvitationModel.created_at.desc())
@@ -177,16 +180,15 @@ class SaaSClient(BaseDBClient):
             )
             await session.commit()
 
-    async def revoke_invitation(
-        self, invitation_id: int, organization_id: int
-    ) -> bool:
+    async def revoke_invitation(self, invitation_id: int, organization_id: int) -> bool:
         async with self.async_session() as session:
             result = await session.execute(
                 update(OrganizationInvitationModel)
                 .where(
                     OrganizationInvitationModel.id == invitation_id,
                     OrganizationInvitationModel.organization_id == organization_id,
-                    OrganizationInvitationModel.status == InvitationStatus.PENDING.value,
+                    OrganizationInvitationModel.status
+                    == InvitationStatus.PENDING.value,
                 )
                 .values(status=InvitationStatus.REVOKED.value)
             )
@@ -221,8 +223,7 @@ class SaaSClient(BaseDBClient):
         async with self.async_session() as session:
             result = await session.execute(
                 select(OrganizationSubscriptionModel).where(
-                    OrganizationSubscriptionModel.provider_plan_id
-                    == provider_plan_id
+                    OrganizationSubscriptionModel.provider_plan_id == provider_plan_id
                 )
             )
             return result.scalars().first()
@@ -353,4 +354,3 @@ class SaaSClient(BaseDBClient):
             result = await session.execute(stmt)
             await session.commit()
             return bool(result.rowcount)
-

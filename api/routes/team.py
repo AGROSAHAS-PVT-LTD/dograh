@@ -3,6 +3,7 @@ import secrets
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
+from loguru import logger
 
 from api.constants import UI_APP_URL
 from api.db import db_client
@@ -18,14 +19,13 @@ from api.schemas.team import (
     UpdateMemberRoleRequest,
 )
 from api.services.auth.depends import get_user
+from api.services.email import send_invitation_email
 from api.services.saas.access import (
     OrganizationAccess,
     get_organization_access,
     require_organization_roles,
 )
 from api.services.saas.entitlements import assert_seat_capacity, get_entitlements
-from api.services.email import send_invitation_email
-from loguru import logger
 
 router = APIRouter(prefix="/team", tags=["team"])
 
@@ -97,9 +97,7 @@ async def invite_member(
 
     existing_user = await db_client.get_user_by_email(request.email)
     if existing_user:
-        role = await db_client.get_user_role(
-            existing_user.id, access.organization_id
-        )
+        role = await db_client.get_user_role(existing_user.id, access.organization_id)
         if role:
             raise HTTPException(
                 status_code=409,
@@ -132,9 +130,7 @@ async def invite_member(
             expires_at=invitation.expires_at.strftime("%Y-%m-%d %H:%M UTC"),
         )
     except Exception as exc:
-        logger.warning(
-            "Could not send invitation email to {}: {}", request.email, exc
-        )
+        logger.warning("Could not send invitation email to {}: {}", request.email, exc)
     return _invitation_response(invitation, invite_url, email_sent=email_sent)
 
 
@@ -145,9 +141,7 @@ async def revoke_invitation(
         require_organization_roles(OrganizationRole.OWNER, OrganizationRole.ADMIN)
     ),
 ) -> MessageResponse:
-    revoked = await db_client.revoke_invitation(
-        invitation_id, access.organization_id
-    )
+    revoked = await db_client.revoke_invitation(invitation_id, access.organization_id)
     if not revoked:
         raise HTTPException(status_code=404, detail="Pending invitation not found")
     return MessageResponse(message="Invitation revoked")
@@ -230,10 +224,11 @@ async def remove_member(
         raise HTTPException(status_code=404, detail="Member not found")
     if current_role == OrganizationRole.OWNER.value:
         raise HTTPException(status_code=400, detail="The owner cannot be removed")
-    if access.role == OrganizationRole.ADMIN and current_role == OrganizationRole.ADMIN.value:
-        raise HTTPException(
-            status_code=403, detail="Only an owner can remove an admin"
-        )
+    if (
+        access.role == OrganizationRole.ADMIN
+        and current_role == OrganizationRole.ADMIN.value
+    ):
+        raise HTTPException(status_code=403, detail="Only an owner can remove an admin")
 
     await db_client.remove_user_from_organization(user_id, access.organization_id)
     return MessageResponse(message="Member removed")

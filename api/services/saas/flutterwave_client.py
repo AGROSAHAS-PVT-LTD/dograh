@@ -215,4 +215,3 @@ def verify_webhook(payload: bytes, verif_hash: str | None) -> dict[str, Any]:
             status_code=400, detail="Invalid Flutterwave webhook payload"
         )
     return event
-

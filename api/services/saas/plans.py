@@ -47,8 +47,7 @@ class Plan:
             "base_price_usd_cents": self.base_price_usd_cents,
             "price_usd": self.base_price_usd_cents / 100,
             "price_cents": localized_minor,
-            "price_display": price_display
-            or f"${localized_minor / 100:,.0f}",
+            "price_display": price_display or f"${localized_minor / 100:,.0f}",
             "currency": currency,
             "billing_interval": billing_interval,
             "fx_rate": fx_rate,
@@ -116,8 +115,7 @@ SCALE_PLAN = Plan(
 )
 
 PLANS: dict[str, Plan] = {
-    plan.code: plan
-    for plan in (TRIAL_PLAN, STARTER_PLAN, GROWTH_PLAN, SCALE_PLAN)
+    plan.code: plan for plan in (TRIAL_PLAN, STARTER_PLAN, GROWTH_PLAN, SCALE_PLAN)
 }
 
 PUBLIC_PLAN_CODES = ("starter", "growth", "scale")
@@ -134,4 +132,3 @@ def get_plan(plan_code: str) -> Plan:
 def configured_plans() -> list[Plan]:
     """Return public plans. Billing configuration only gates checkout."""
     return [PLANS[code] for code in PUBLIC_PLAN_CODES]
-

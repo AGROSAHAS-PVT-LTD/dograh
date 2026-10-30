@@ -44,5 +44,7 @@ def verify_firebase_id_token(token: str) -> dict[str, Any]:
     if provider == "google.com" and not payload.get("email_verified"):
         raise HTTPException(status_code=401, detail="Google email is not verified")
     if provider == "phone" and not payload.get("phone_number"):
-        raise HTTPException(status_code=401, detail="Firebase token has no phone number")
+        raise HTTPException(
+            status_code=401, detail="Firebase token has no phone number"
+        )
     return dict(payload)

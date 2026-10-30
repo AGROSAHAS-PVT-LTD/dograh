@@ -1,5 +1,6 @@
 "use client";
 
+import type { Auth, ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
 import { Loader2, Phone } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -8,7 +9,6 @@ import { client } from "@/client/client.gen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Auth, ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
 
 interface FirebaseBrowserConfig {
   apiKey: string;

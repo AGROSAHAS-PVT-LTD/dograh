@@ -127,6 +127,7 @@ def format_amount(currency: str, amount_minor: int) -> str:
     symbol = CURRENCY_SYMBOLS.get(currency, f"{currency} ")
     return f"{symbol}{amount:,.0f}"
 
+
 def _override_rates() -> dict[str, float]:
     if not FX_RATES_JSON:
         return {}
@@ -231,4 +232,3 @@ async def quote(plan: Plan, currency: str, billing_interval: str) -> dict[str, A
         "amount_minor": amount_minor,
         "price_display": format_amount(currency, amount_minor),
     }
-

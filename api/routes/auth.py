@@ -263,9 +263,7 @@ async def request_password_reset(request: PasswordResetRequest) -> dict:
     dependencies=[Depends(require_local_auth)],
 )
 async def reset_password(request: PasswordResetConfirm) -> dict:
-    record = await db_client.get_password_reset_token(
-        _reset_token_hash(request.token)
-    )
+    record = await db_client.get_password_reset_token(_reset_token_hash(request.token))
     if record is None or record.used_at is not None:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
     if record.expires_at <= datetime.now(UTC):

@@ -18,9 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.rename_table("stripe_events", "billing_events")
-    op.alter_column(
-        "billing_events", "event_id", new_column_name="event_key"
-    )
+    op.alter_column("billing_events", "event_id", new_column_name="event_key")
     op.add_column(
         "billing_events",
         sa.Column(

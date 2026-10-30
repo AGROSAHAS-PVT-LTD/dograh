@@ -69,14 +69,26 @@ def upgrade() -> None:
         sa.Column("uuid", sa.String(length=36), nullable=False),
         sa.Column("organization_id", sa.Integer(), nullable=False),
         sa.Column("email", sa.String(), nullable=False),
-        sa.Column("role", organization_role, nullable=False, server_default=sa.text("'member'")),
+        sa.Column(
+            "role",
+            organization_role,
+            nullable=False,
+            server_default=sa.text("'member'"),
+        ),
         sa.Column("token_hash", sa.String(), nullable=False),
-        sa.Column("status", invitation_status, nullable=False, server_default=sa.text("'pending'")),
+        sa.Column(
+            "status",
+            invitation_status,
+            nullable=False,
+            server_default=sa.text("'pending'"),
+        ),
         sa.Column("invited_by", sa.Integer(), nullable=True),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("accepted_at", sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(["organization_id"], ["organizations.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["organization_id"], ["organizations.id"], ondelete="CASCADE"
+        ),
         sa.ForeignKeyConstraint(["invited_by"], ["users.id"], ondelete="SET NULL"),
         sa.UniqueConstraint("uuid"),
         sa.UniqueConstraint("token_hash"),
@@ -116,7 +128,9 @@ def upgrade() -> None:
         sa.Column("trial_end", sa.DateTime(timezone=True), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(["organization_id"], ["organizations.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["organization_id"], ["organizations.id"], ondelete="CASCADE"
+        ),
         sa.UniqueConstraint("organization_id"),
         sa.UniqueConstraint("stripe_customer_id"),
         sa.UniqueConstraint("stripe_subscription_id"),
@@ -136,8 +150,12 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table("stripe_events")
     op.drop_table("organization_subscriptions")
-    op.drop_index("ix_organization_invitations_email", table_name="organization_invitations")
-    op.drop_index("ix_organization_invitations_org", table_name="organization_invitations")
+    op.drop_index(
+        "ix_organization_invitations_email", table_name="organization_invitations"
+    )
+    op.drop_index(
+        "ix_organization_invitations_org", table_name="organization_invitations"
+    )
     op.drop_table("organization_invitations")
     op.drop_column("organization_users", "role")
 

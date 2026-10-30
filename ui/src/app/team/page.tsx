@@ -19,9 +19,9 @@ import { useAuth } from "@/lib/auth";
 import {
   getTeam,
   inviteMember,
+  type OrganizationRole,
   removeMember,
   revokeInvitation,
-  type OrganizationRole,
   type TeamResponse,
   updateMemberRole,
 } from "@/lib/saasApi";

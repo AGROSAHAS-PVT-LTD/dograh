@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
 
 from api.db.base_client import BaseDBClient
-from api.db.models import UserConfigurationModel, UserModel, PasswordResetTokenModel
+from api.db.models import PasswordResetTokenModel, UserConfigurationModel, UserModel
 
 
 class UserClient(BaseDBClient):
@@ -237,9 +237,7 @@ class UserClient(BaseDBClient):
 
             if user is None and normalized_phone:
                 result = await session.execute(
-                    select(UserModel).where(
-                        UserModel.phone_number == normalized_phone
-                    )
+                    select(UserModel).where(UserModel.phone_number == normalized_phone)
                 )
                 user = result.scalars().first()
 
@@ -283,9 +281,7 @@ class UserClient(BaseDBClient):
                 user = result.scalars().first()
             if user is None and normalized_phone:
                 result = await session.execute(
-                    select(UserModel).where(
-                        UserModel.phone_number == normalized_phone
-                    )
+                    select(UserModel).where(UserModel.phone_number == normalized_phone)
                 )
                 user = result.scalars().first()
             if user is None:
