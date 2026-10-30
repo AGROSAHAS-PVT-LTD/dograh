@@ -58,6 +58,22 @@ BACKEND_API_ENDPOINT = (
 )
 UI_APP_URL = os.getenv("UI_APP_URL", "http://localhost:3010")
 
+# Transactional email (team invitations and future password resets). Leave
+# SMTP_HOST unset to keep emails disabled; invitations still return a copyable
+# link so the product remains usable in local/self-hosted installs.
+SMTP_HOST = os.getenv("SMTP_HOST")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "no-reply@dograh.local")
+SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Dograh")
+SMTP_REPLY_TO = os.getenv("SMTP_REPLY_TO")
+SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+SMTP_USE_SSL = os.getenv("SMTP_USE_SSL", "false").lower() == "true"
+SMTP_TIMEOUT_SECONDS = max(1, int(os.getenv("SMTP_TIMEOUT_SECONDS", "15")))
+EMAIL_DELIVERY_ENABLED = bool(SMTP_HOST)
+
+
 DATABASE_URL = os.environ["DATABASE_URL"]
 REDIS_URL = os.environ["REDIS_URL"]
 
@@ -73,8 +89,55 @@ ENABLE_SIGNUP = os.getenv("ENABLE_SIGNUP", "true").lower() == "true"
 # needs them baked into the bundle at build time.
 STACK_AUTH_PROJECT_ID = os.getenv("STACK_AUTH_PROJECT_ID")
 STACK_PUBLISHABLE_CLIENT_KEY = os.getenv("STACK_PUBLISHABLE_CLIENT_KEY")
+
+# Firebase Authentication (Google + phone/SMS). The project id is also the
+# audience used to verify Firebase ID tokens on the API. The remaining values
+# are public browser configuration and are returned by /health at runtime.
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID") or os.getenv(
+    "NEXT_PUBLIC_FIREBASE_PROJECT_ID"
+)
+FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY") or os.getenv(
+    "NEXT_PUBLIC_FIREBASE_API_KEY"
+)
+FIREBASE_AUTH_DOMAIN = os.getenv("FIREBASE_AUTH_DOMAIN") or os.getenv(
+    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"
+)
+FIREBASE_APP_ID = os.getenv("FIREBASE_APP_ID") or os.getenv(
+    "NEXT_PUBLIC_FIREBASE_APP_ID"
+)
+FIREBASE_MESSAGING_SENDER_ID = os.getenv("FIREBASE_MESSAGING_SENDER_ID") or os.getenv(
+    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID"
+)
+if not FIREBASE_AUTH_DOMAIN and FIREBASE_PROJECT_ID:
+    FIREBASE_AUTH_DOMAIN = f"{FIREBASE_PROJECT_ID}.firebaseapp.com"
+FIREBASE_ENABLED = bool(FIREBASE_PROJECT_ID and FIREBASE_API_KEY and FIREBASE_APP_ID)
+
 DOGRAH_MPS_SECRET_KEY = os.getenv("DOGRAH_MPS_SECRET_KEY", None)
 MPS_API_URL = os.getenv("MPS_API_URL", "https://services.dograh.com")
+
+# SaaS billing with Flutterwave. Leave these unset for the OSS/local
+# deployment; checkout returns a clear 503 until the operator configures them.
+FLW_SECRET_KEY = os.getenv("FLW_SECRET_KEY") or os.getenv("FLUTTERWAVE_SECRET_KEY")
+FLW_PUBLIC_KEY = os.getenv("FLW_PUBLIC_KEY") or os.getenv("FLUTTERWAVE_PUBLIC_KEY")
+# The "secret hash" configured in the Flutterwave dashboard's Webhooks page.
+# Flutterwave sends it back in the verif-hash header.
+FLW_WEBHOOK_SECRET = os.getenv("FLW_WEBHOOK_SECRET") or os.getenv(
+    "FLUTTERWAVE_WEBHOOK_SECRET"
+)
+FLW_API_BASE = os.getenv("FLW_API_BASE", "https://api.flutterwave.com/v3")
+SAAS_TRIAL_DAYS = max(0, int(os.getenv("SAAS_TRIAL_DAYS", "14")))
+
+# Local-currency pricing. Prices are authored in USD and converted with a
+# buffer so small FX movements do not erode margin.
+FX_API_URL = os.getenv("FX_API_URL", "https://open.er-api.com/v6/latest/USD")
+FX_BUFFER_PERCENT = max(0.0, float(os.getenv("FX_BUFFER_PERCENT", "10")))
+FX_CACHE_TTL_SECONDS = max(300, int(os.getenv("FX_CACHE_TTL_SECONDS", "86400")))
+ANNUAL_DISCOUNT_PERCENT = min(
+    100.0, max(0.0, float(os.getenv("ANNUAL_DISCOUNT_PERCENT", "20")))
+)
+# Optional JSON override, e.g. {"NGN": 1650, "GHS": 15.5}. Useful when the
+# public rate provider is unavailable or an operator wants a fixed rate.
+FX_RATES_JSON = os.getenv("FX_RATES_JSON")
 DOGRAH_DEPLOYMENT_ID = os.getenv(
     "DOGRAH_DEPLOYMENT_ID", "oss" if DEPLOYMENT_MODE == "oss" else "us"
 )

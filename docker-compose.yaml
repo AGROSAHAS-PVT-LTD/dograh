@@ -165,6 +165,42 @@ services:
       # tunnel's URL at runtime instead (see api/utils/common.py).
       BACKEND_API_ENDPOINT: "${BACKEND_API_ENDPOINT:-}"
 
+      # SaaS billing and invite links (Flutterwave)
+      UI_APP_URL: "${UI_APP_URL:-http://localhost:3010}"
+      FLW_SECRET_KEY: "${FLW_SECRET_KEY:-}"
+      FLW_PUBLIC_KEY: "${FLW_PUBLIC_KEY:-}"
+      FLW_WEBHOOK_SECRET: "${FLW_WEBHOOK_SECRET:-}"
+      FLW_API_BASE: "${FLW_API_BASE:-https://api.flutterwave.com/v3}"
+      FX_API_URL: "${FX_API_URL:-https://open.er-api.com/v6/latest/USD}"
+      FX_BUFFER_PERCENT: "${FX_BUFFER_PERCENT:-10}"
+      FX_CACHE_TTL_SECONDS: "${FX_CACHE_TTL_SECONDS:-86400}"
+      FX_RATES_JSON: "${FX_RATES_JSON:-}"
+      ANNUAL_DISCOUNT_PERCENT: "${ANNUAL_DISCOUNT_PERCENT:-20}"
+      SAAS_TRIAL_DAYS: "${SAAS_TRIAL_DAYS:-14}"
+
+      # Stack Auth (optional)
+      STACK_AUTH_PROJECT_ID: "${STACK_AUTH_PROJECT_ID:-}"
+      STACK_PUBLISHABLE_CLIENT_KEY: "${STACK_PUBLISHABLE_CLIENT_KEY:-}"
+
+      # Firebase Authentication (Google + phone/SMS)
+      FIREBASE_PROJECT_ID: "${FIREBASE_PROJECT_ID:-}"
+      FIREBASE_API_KEY: "${FIREBASE_API_KEY:-}"
+      FIREBASE_AUTH_DOMAIN: "${FIREBASE_AUTH_DOMAIN:-}"
+      FIREBASE_APP_ID: "${FIREBASE_APP_ID:-}"
+      FIREBASE_MESSAGING_SENDER_ID: "${FIREBASE_MESSAGING_SENDER_ID:-}"
+
+      # Transactional email (invitations / password reset)
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USERNAME: "${SMTP_USERNAME:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      SMTP_FROM_EMAIL: "${SMTP_FROM_EMAIL:-no-reply@dograh.local}"
+      SMTP_FROM_NAME: "${SMTP_FROM_NAME:-Dograh}"
+      SMTP_REPLY_TO: "${SMTP_REPLY_TO:-}"
+      SMTP_USE_TLS: "${SMTP_USE_TLS:-true}"
+      SMTP_USE_SSL: "${SMTP_USE_SSL:-false}"
+      SMTP_TIMEOUT_SECONDS: "${SMTP_TIMEOUT_SECONDS:-15}"
+
       # Database configuration (using containerized postgres)
       DATABASE_URL: "postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/postgres"
 

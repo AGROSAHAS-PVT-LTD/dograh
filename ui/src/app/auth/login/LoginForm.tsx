@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { loginApiV1AuthLoginPost } from "@/client/sdk.gen";
 import { AuthEnterpriseCTA } from "@/components/auth/AuthEnterpriseCTA";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { FirebaseAuthButtons } from "@/components/auth/FirebaseAuthButtons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,11 +78,21 @@ export function LoginForm({ signupEnabled }: { signupEnabled: boolean }) {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+          <div className="text-right">
+            <Link
+              href="/auth/forgot-password"
+              className="text-xs text-primary underline-offset-4 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
+
+      <FirebaseAuthButtons />
 
       {signupEnabled && (
         <p className="text-center text-sm text-muted-foreground">

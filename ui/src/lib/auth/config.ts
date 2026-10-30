@@ -7,9 +7,18 @@ export interface StackConfig {
   publishableClientKey: string;
 }
 
+export interface FirebaseConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  appId: string;
+  messagingSenderId?: string;
+}
+
 interface ResolvedAuthConfig {
   authProvider: string;
   stackConfig: StackConfig | null;
+  firebaseConfig: FirebaseConfig | null;
   signupEnabled: boolean;
 }
 
@@ -49,7 +58,16 @@ async function resolveAuthConfig(): Promise<ResolvedAuthConfig> {
       // Default to signup-enabled when the backend omits the field (older api
       // versions before the flag existed) — matches the backend's own default.
       const signupEnabled = data.signup_enabled !== false;
-      cachedConfig = { authProvider, stackConfig, signupEnabled };
+      const firebaseConfig =
+        data.firebase_enabled && data.firebase_config
+          ? (data.firebase_config as FirebaseConfig)
+          : null;
+      cachedConfig = {
+        authProvider,
+        stackConfig,
+        firebaseConfig,
+        signupEnabled,
+      };
       return cachedConfig;
     }
   } catch {
@@ -60,7 +78,12 @@ async function resolveAuthConfig(): Promise<ResolvedAuthConfig> {
   // do NOT cache it: caching here would pin the entire UI to local auth until a
   // container restart if the first resolution loses the startup race with the api
   // service. Leaving it uncached means the next request retries and self-heals.
-  return { authProvider: "local", stackConfig: null, signupEnabled: true };
+  return {
+    authProvider: "local",
+    stackConfig: null,
+    firebaseConfig: null,
+    signupEnabled: true,
+  };
 }
 
 /**
@@ -76,6 +99,14 @@ export async function getAuthProvider(): Promise<string> {
  */
 export async function getStackConfig(): Promise<StackConfig | null> {
   return (await resolveAuthConfig()).stackConfig;
+}
+
+/**
+ * Returns the public Firebase browser config when the backend has one.
+ * Server-only — the browser receives it through /api/config/auth.
+ */
+export async function getFirebaseConfig(): Promise<FirebaseConfig | null> {
+  return (await resolveAuthConfig()).firebaseConfig;
 }
 
 /**

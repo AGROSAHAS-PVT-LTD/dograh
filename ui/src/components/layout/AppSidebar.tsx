@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CircleDollarSign,
+  CreditCard,
   Database,
   FileText,
   Home,
@@ -21,6 +22,7 @@ import {
   ShieldCheck,
   TrendingUp,
   UserRound,
+  Users,
   Workflow,
   Wrench,
 } from "lucide-react";
@@ -152,7 +154,17 @@ const NAV_SECTIONS: SidebarNavSection[] = [
         icon: TrendingUp,
       },
       {
-        title: "Billing",
+        title: "Team",
+        url: "/team",
+        icon: Users,
+      },
+      {
+        title: "Plan",
+        url: "/plan",
+        icon: CreditCard,
+      },
+      {
+        title: "Credits",
         url: "/billing",
         icon: CircleDollarSign,
       },

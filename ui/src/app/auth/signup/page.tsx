@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { signupApiV1AuthSignupPost } from "@/client/sdk.gen";
 import { AuthEnterpriseCTA } from "@/components/auth/AuthEnterpriseCTA";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { FirebaseAuthButtons } from "@/components/auth/FirebaseAuthButtons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,6 +106,8 @@ export default function SignupPage() {
           {loading ? "Creating account..." : "Create account"}
         </Button>
       </form>
+
+      <FirebaseAuthButtons />
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}

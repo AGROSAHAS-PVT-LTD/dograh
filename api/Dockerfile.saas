@@ -1,0 +1,11 @@
+# SaaS overlay image.
+#
+# The upstream API Dockerfile builds its dependency layer from python:3.13-slim
+# and currently fails because that base image cannot resolve the `git` package.
+# The released dograh-api image already contains the correct runtime and Python
+# dependencies, so this overlay replaces only the application source.
+FROM dograhai/dograh-api:latest
+
+COPY --chown=dograh:dograh api /app/api
+
+USER dograh
