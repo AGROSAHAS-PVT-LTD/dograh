@@ -9,7 +9,6 @@ import pytest
 from pipecat.services.deepgram.flux.stt import DeepgramFluxSTTService
 from pipecat.services.deepgram.flux.stt_base import DeepgramFluxSTTSettings
 from pipecat.services.dograh.flux.stt import DograhFluxSTTService
-from pipecat.tests import MockLLMService
 from pipecat.transcriptions.language import Language
 from pipecat.utils.enums import EndTaskReason
 
@@ -22,6 +21,7 @@ from api.tests.test_agent_transfer import (
     build_agent_workflow,
     run_transfer,
 )
+from pipecat.tests import MockLLMService
 
 
 @pytest.fixture(params=[DeepgramFluxSTTService, DograhFluxSTTService])

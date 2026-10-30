@@ -23,7 +23,6 @@ from pipecat.processors.aggregators.llm_response_universal import (
     LLMAssistantAggregatorParams,
     LLMContextAggregatorPair,
 )
-from pipecat.tests import MockLLMService, MockTTSService
 from pipecat.tests.mock_transport import MockTransport
 from pipecat.transports.base_transport import TransportParams
 
@@ -33,6 +32,7 @@ from api.services.workflow.pipecat_engine_variable_extractor import (
 )
 from api.services.workflow.workflow_graph import WorkflowGraph
 from api.tests.pipecat_test_utils import run_engine_test_pipeline
+from pipecat.tests import MockLLMService, MockTTSService
 
 
 class TestVariableExtractionDuringTransitions:
